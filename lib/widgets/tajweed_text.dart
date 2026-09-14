@@ -4,13 +4,24 @@ import '../models/tajweed_models.dart';
 
 class TajweedText extends StatelessWidget {
   final String markup;
+  final String? displayText;
   final TextStyle? style;
 
-  const TajweedText({super.key, required this.markup, this.style});
+  const TajweedText({
+    super.key,
+    required this.markup,
+    this.displayText,
+    this.style,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final segments = TajweedMarkupParser.parse(markup);
+    final segments = displayText == null
+        ? TajweedMarkupParser.parse(markup)
+        : IndoPakTajweedMapper.map(
+            indoPakText: displayText!,
+            uthmaniMarkup: markup,
+          );
     final baseStyle = style ?? DefaultTextStyle.of(context).style;
     return Text.rich(
       TextSpan(

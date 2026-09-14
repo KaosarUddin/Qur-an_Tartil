@@ -9,6 +9,13 @@ import 'recitation_screen.dart';
 
 enum _ReadingMode { uthmani, tajweed, indoPak }
 
+class _ReaderData {
+  final Map<int, String> textByAyah;
+  final Map<int, String>? tajweedByAyah;
+
+  const _ReaderData({required this.textByAyah, this.tajweedByAyah});
+}
+
 class SurahScreen extends StatefulWidget {
   final Surah surah;
 
@@ -22,7 +29,9 @@ class _SurahScreenState extends State<SurahScreen> {
   late QuranScriptService _tajweedService;
   late QuranScriptService _indoPakService;
   late Future<Map<int, String>> _tajweed;
+  late Future<_ReaderData> _tajweedReader;
   Future<Map<int, String>>? _indoPak;
+  Future<_ReaderData>? _indoPakReader;
   _ReadingMode _mode = _ReadingMode.tajweed;
   bool _indoPakFontLoading = false;
   bool _indoPakFontLoaded = false;
@@ -37,6 +46,7 @@ class _SurahScreenState extends State<SurahScreen> {
       service: _tajweedService,
       script: QuranOnlineScript.tajweed,
     );
+    _tajweedReader = _asTajweedReader(_tajweed);
   }
 
   Future<Map<int, String>> _load({
@@ -49,10 +59,29 @@ class _SurahScreenState extends State<SurahScreen> {
         expectedAyahCount: widget.surah.ayahs.length,
       );
 
-  Future<Map<int, String>>? get _selectedFuture => switch (_mode) {
+  Future<_ReaderData> _asTajweedReader(Future<Map<int, String>> future) async {
+    final text = await future;
+    return _ReaderData(textByAyah: text, tajweedByAyah: text);
+  }
+
+  Future<_ReaderData> _asIndoPakReader(
+    Future<Map<int, String>> indoPak,
+    Future<Map<int, String>> tajweed,
+  ) async {
+    final text = await indoPak;
+    Map<int, String>? tajweedText;
+    try {
+      tajweedText = await tajweed;
+    } catch (_) {
+      tajweedText = null;
+    }
+    return _ReaderData(textByAyah: text, tajweedByAyah: tajweedText);
+  }
+
+  Future<_ReaderData>? get _selectedFuture => switch (_mode) {
         _ReadingMode.uthmani => null,
-        _ReadingMode.tajweed => _tajweed,
-        _ReadingMode.indoPak => _indoPak,
+        _ReadingMode.tajweed => _tajweedReader,
+        _ReadingMode.indoPak => _indoPakReader,
       };
 
   void _selectMode(_ReadingMode mode) {
@@ -61,6 +90,7 @@ class _SurahScreenState extends State<SurahScreen> {
         service: _indoPakService,
         script: QuranOnlineScript.indoPak,
       );
+      _indoPakReader = _asIndoPakReader(_indoPak!, _tajweed);
       _loadIndoPakFont();
     }
     setState(() => _mode = mode);
@@ -91,13 +121,25 @@ class _SurahScreenState extends State<SurahScreen> {
           service: _tajweedService,
           script: QuranOnlineScript.tajweed,
         );
+        _tajweedReader = _asTajweedReader(_tajweed);
+        if (_indoPak != null) {
+          _indoPakReader = _asIndoPakReader(_indoPak!, _tajweed);
+        }
       } else if (_mode == _ReadingMode.indoPak) {
+        _tajweedService.dispose();
+        _tajweedService = QuranScriptService();
+        _tajweed = _load(
+          service: _tajweedService,
+          script: QuranOnlineScript.tajweed,
+        );
+        _tajweedReader = _asTajweedReader(_tajweed);
         _indoPakService.dispose();
         _indoPakService = QuranScriptService();
         _indoPak = _load(
           service: _indoPakService,
           script: QuranOnlineScript.indoPak,
         );
+        _indoPakReader = _asIndoPakReader(_indoPak!, _tajweed);
         retryIndoPakFont = true;
       }
     });
@@ -126,7 +168,7 @@ class _SurahScreenState extends State<SurahScreen> {
       appBar: AppBar(
         title: Text('${widget.surah.nameEnglish} • ${widget.surah.nameArabic}'),
       ),
-      body: FutureBuilder<Map<int, String>>(
+      body: FutureBuilder<_ReaderData>(
         key: ValueKey(_mode),
         future: _selectedFuture,
         builder: (context, snapshot) {
@@ -141,6 +183,10 @@ class _SurahScreenState extends State<SurahScreen> {
                 failed: onlineMode && snapshot.hasError,
                 indoPakFontFailed:
                     _mode == _ReadingMode.indoPak && _indoPakFontFailed,
+                indoPakTajweedMissing: _mode == _ReadingMode.indoPak &&
+                    snapshot.connectionState == ConnectionState.done &&
+                    snapshot.hasData &&
+                    snapshot.data!.tajweedByAyah == null,
                 onChanged: _selectMode,
                 onRetry: _retrySelectedMode,
                 onOpenSource: _openSource,
@@ -158,8 +204,12 @@ class _SurahScreenState extends State<SurahScreen> {
                       mode: _mode,
                       indoPakFontLoaded: _indoPakFontLoaded,
                       onlineText: onlineMode && snapshot.data != null
-                          ? snapshot.data![ayah.number]
+                          ? snapshot.data!.textByAyah[ayah.number]
                           : null,
+                      tajweedMarkup:
+                          onlineMode && snapshot.data?.tajweedByAyah != null
+                              ? snapshot.data!.tajweedByAyah![ayah.number]
+                              : null,
                     );
                   },
                 ),
@@ -177,6 +227,7 @@ class _ReaderControls extends StatelessWidget {
   final bool loading;
   final bool failed;
   final bool indoPakFontFailed;
+  final bool indoPakTajweedMissing;
   final ValueChanged<_ReadingMode> onChanged;
   final VoidCallback onRetry;
   final VoidCallback onOpenSource;
@@ -186,6 +237,7 @@ class _ReaderControls extends StatelessWidget {
     required this.loading,
     required this.failed,
     required this.indoPakFontFailed,
+    required this.indoPakTajweedMissing,
     required this.onChanged,
     required this.onRetry,
     required this.onOpenSource,
@@ -206,9 +258,12 @@ class _ReaderControls extends StatelessWidget {
     if (mode == _ReadingMode.indoPak && indoPakFontFailed) {
       return 'Indo-Pak text loaded; using a fallback font';
     }
+    if (mode == _ReadingMode.indoPak && indoPakTajweedMissing) {
+      return 'Indo-Pak loaded; Tajweed colours need a connection';
+    }
     return mode == _ReadingMode.tajweed
         ? 'Colours mark pronunciation rules; schemes vary by Mushaf.'
-        : 'Indo-Pak Quranic orthography';
+        : 'Indo-Pak Nastaleeq with aligned Tajweed colours';
   }
 
   @override
@@ -248,7 +303,7 @@ class _ReaderControls extends StatelessWidget {
                   ),
                   ButtonSegment(
                     value: _ReadingMode.indoPak,
-                    label: Text('Indo-Pak'),
+                    label: Text('Indo-Pak + Tajweed'),
                   ),
                 ],
                 selected: {mode},
@@ -262,11 +317,14 @@ class _ReaderControls extends StatelessWidget {
                     color: colorScheme.onSurfaceVariant,
                   ),
             ),
-            if (mode == _ReadingMode.tajweed && !failed) ...[
+            if (mode != _ReadingMode.uthmani &&
+                !failed &&
+                !indoPakTajweedMissing) ...[
               const SizedBox(height: 8),
               const TajweedLegend(),
             ],
-            if (onlineMode && (failed || indoPakFontFailed))
+            if (onlineMode &&
+                (failed || indoPakFontFailed || indoPakTajweedMissing))
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
@@ -275,7 +333,9 @@ class _ReaderControls extends StatelessWidget {
                   label: Text(
                     failed
                         ? 'Retry selected script'
-                        : 'Retry Indo-Pak typeface',
+                        : indoPakTajweedMissing
+                            ? 'Retry Tajweed colours'
+                            : 'Retry Indo-Pak typeface',
                   ),
                 ),
               ),
@@ -300,6 +360,7 @@ class _AyahCard extends StatelessWidget {
   final _ReadingMode mode;
   final bool indoPakFontLoaded;
   final String? onlineText;
+  final String? tajweedMarkup;
 
   const _AyahCard({
     required this.surah,
@@ -307,6 +368,7 @@ class _AyahCard extends StatelessWidget {
     required this.mode,
     required this.indoPakFontLoaded,
     required this.onlineText,
+    required this.tajweedMarkup,
   });
 
   @override
@@ -357,6 +419,14 @@ class _AyahCard extends StatelessWidget {
             const SizedBox(height: 14),
             if (mode == _ReadingMode.tajweed && onlineText != null)
               TajweedText(markup: onlineText!, style: arabicStyle)
+            else if (mode == _ReadingMode.indoPak &&
+                onlineText != null &&
+                tajweedMarkup != null)
+              TajweedText(
+                markup: tajweedMarkup!,
+                displayText: onlineText,
+                style: arabicStyle,
+              )
             else
               Text(
                 onlineText ?? ayah.arabic,
