@@ -7,6 +7,7 @@ A clean Flutter + FastAPI starter for a Quran learning app inspired by the *cate
 - Home dashboard
 - All 114 surahs with 6,236 Arabic ayahs available offline
 - Uthmani-script ayah reader with surah metadata
+- Optional colour-coded Tajweed reading mode with a rule legend
 - Automatic reference recitation after each analysis
 - Side-by-side playback of the reference recitation and learner recording
 - Microphone recording using `record`
@@ -59,6 +60,8 @@ The app uses `http://10.0.2.2:8000` on an Android emulator and `http://127.0.0.1
 The bundled Uthmani Quran text and metadata come from the [Tanzil Project](https://tanzil.net/). The text contains all 114 surahs and 6,236 ayahs and is distributed verbatim under the Creative Commons Attribution 3.0 license. Tanzil's required copyright and license notice is retained in `assets/quran/quran-uthmani.txt`.
 
 The basmala is included at the start of every surah except At-Tawbah (Surah 9), following the source text and standard Mushaf convention. The basmala within An-Naml 27:30 is also preserved. Surahs 95 and 97 retain Tanzil's documented Uthmani idgham spelling.
+
+When Tajweed colours are enabled, the reader requests the selected surah's annotated Uthmani text from the [Quran Foundation Content API](https://api-docs.quran.com/docs/content_apis_versioned/4.0.0/quran-verses-uthmani-tajweed/). The response is held only in memory for the current app session, is displayed without modifying its text, and falls back to the bundled Tanzil text if the network is unavailable. The app displays the required Quran Foundation attribution alongside the colour legend. Tajweed colour schemes can vary between Mushaf editions; use the rule labels, rather than colour alone, as the guide.
 
 To fetch and validate a fresh verbatim copy from Tanzil:
 
