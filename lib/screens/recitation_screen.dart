@@ -3,12 +3,25 @@ import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/quran_models.dart';
 import '../services/api_service.dart';
+import '../services/quran_font_service.dart';
+import '../widgets/tajweed_text.dart';
 import 'result_screen.dart';
 
 class RecitationScreen extends StatefulWidget {
   final Surah surah;
   final Ayah ayah;
-  const RecitationScreen({super.key, required this.surah, required this.ayah});
+  final String? displayText;
+  final String? tajweedMarkup;
+  final bool useIndoPakFont;
+
+  const RecitationScreen({
+    super.key,
+    required this.surah,
+    required this.ayah,
+    this.displayText,
+    this.tajweedMarkup,
+    this.useIndoPakFont = false,
+  });
 
   @override
   State<RecitationScreen> createState() => _RecitationScreenState();
@@ -76,6 +89,12 @@ class _RecitationScreenState extends State<RecitationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ayahStyle = TextStyle(
+      fontFamily: widget.useIndoPakFont ? QuranFontService.indoPakFamily : null,
+      fontSize: widget.useIndoPakFont ? 38 : 36,
+      height: widget.useIndoPakFont ? 2.4 : 2,
+      fontWeight: FontWeight.w600,
+    );
     return Scaffold(
       appBar: AppBar(title: const Text('Recitation Practice')),
       body: Padding(
@@ -90,13 +109,19 @@ class _RecitationScreenState extends State<RecitationScreen> {
             const SizedBox(height: 30),
             Expanded(
               child: Center(
-                child: Text(widget.ayah.arabic,
-                    textAlign: TextAlign.center,
-                    textDirection: TextDirection.rtl,
-                    style: const TextStyle(
-                        fontSize: 36,
-                        height: 2.0,
-                        fontWeight: FontWeight.w600)),
+                child: widget.tajweedMarkup != null
+                    ? TajweedText(
+                        markup: widget.tajweedMarkup!,
+                        displayText: widget.displayText,
+                        style: ayahStyle,
+                        textAlign: TextAlign.center,
+                      )
+                    : Text(
+                        widget.displayText ?? widget.ayah.arabic,
+                        textAlign: TextAlign.center,
+                        textDirection: TextDirection.rtl,
+                        style: ayahStyle,
+                      ),
               ),
             ),
             Text(

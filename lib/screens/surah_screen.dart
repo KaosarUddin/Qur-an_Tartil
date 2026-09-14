@@ -12,8 +12,15 @@ enum _ReadingMode { uthmani, tajweed, indoPak }
 class _ReaderData {
   final Map<int, String> textByAyah;
   final Map<int, String>? tajweedByAyah;
+  final String? basmala;
+  final String? tajweedBasmala;
 
-  const _ReaderData({required this.textByAyah, this.tajweedByAyah});
+  const _ReaderData({
+    required this.textByAyah,
+    this.tajweedByAyah,
+    this.basmala,
+    this.tajweedBasmala,
+  });
 }
 
 class SurahScreen extends StatefulWidget {
@@ -61,7 +68,15 @@ class _SurahScreenState extends State<SurahScreen> {
 
   Future<_ReaderData> _asTajweedReader(Future<Map<int, String>> future) async {
     final text = await future;
-    return _ReaderData(textByAyah: text, tajweedByAyah: text);
+    final basmala = widget.surah.basmala == null
+        ? null
+        : await _tajweedService.loadBasmala(QuranOnlineScript.tajweed);
+    return _ReaderData(
+      textByAyah: text,
+      tajweedByAyah: text,
+      basmala: basmala,
+      tajweedBasmala: basmala,
+    );
   }
 
   Future<_ReaderData> _asIndoPakReader(
@@ -69,13 +84,26 @@ class _SurahScreenState extends State<SurahScreen> {
     Future<Map<int, String>> tajweed,
   ) async {
     final text = await indoPak;
+    final basmala = widget.surah.basmala == null
+        ? null
+        : await _indoPakService.loadBasmala(QuranOnlineScript.indoPak);
     Map<int, String>? tajweedText;
+    String? tajweedBasmala;
     try {
       tajweedText = await tajweed;
+      tajweedBasmala = widget.surah.basmala == null
+          ? null
+          : await _tajweedService.loadBasmala(QuranOnlineScript.tajweed);
     } catch (_) {
       tajweedText = null;
+      tajweedBasmala = null;
     }
-    return _ReaderData(textByAyah: text, tajweedByAyah: tajweedText);
+    return _ReaderData(
+      textByAyah: text,
+      tajweedByAyah: tajweedText,
+      basmala: basmala,
+      tajweedBasmala: tajweedBasmala,
+    );
   }
 
   Future<_ReaderData>? get _selectedFuture => switch (_mode) {
@@ -191,6 +219,15 @@ class _SurahScreenState extends State<SurahScreen> {
                 onRetry: _retrySelectedMode,
                 onOpenSource: _openSource,
               ),
+              if (widget.surah.basmala != null)
+                _BasmalaHeader(
+                  mode: _mode,
+                  offlineText: widget.surah.basmala!,
+                  onlineText: onlineMode ? snapshot.data?.basmala : null,
+                  tajweedMarkup:
+                      onlineMode ? snapshot.data?.tajweedBasmala : null,
+                  indoPakFontLoaded: _indoPakFontLoaded,
+                ),
               Expanded(
                 child: ListView.separated(
                   padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
@@ -410,6 +447,11 @@ class _AyahCard extends StatelessWidget {
                       builder: (_) => RecitationScreen(
                         surah: surah,
                         ayah: ayah,
+                        displayText:
+                            mode == _ReadingMode.indoPak ? onlineText : null,
+                        tajweedMarkup: tajweedMarkup,
+                        useIndoPakFont:
+                            mode == _ReadingMode.indoPak && indoPakFontLoaded,
                       ),
                     ),
                   ),
@@ -445,6 +487,60 @@ class _AyahCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _BasmalaHeader extends StatelessWidget {
+  final _ReadingMode mode;
+  final String offlineText;
+  final String? onlineText;
+  final String? tajweedMarkup;
+  final bool indoPakFontLoaded;
+
+  const _BasmalaHeader({
+    required this.mode,
+    required this.offlineText,
+    required this.onlineText,
+    required this.tajweedMarkup,
+    required this.indoPakFontLoaded,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final indoPak = mode == _ReadingMode.indoPak;
+    final style = TextStyle(
+      fontFamily:
+          indoPak && indoPakFontLoaded ? QuranFontService.indoPakFamily : null,
+      fontSize: indoPak ? 30 : 27,
+      height: indoPak ? 2.2 : 1.8,
+      fontWeight: FontWeight.w600,
+    );
+    final displayedText = onlineText ?? offlineText;
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primaryContainer.withValues(
+              alpha: 0.38,
+            ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: mode != _ReadingMode.uthmani && tajweedMarkup != null
+          ? TajweedText(
+              markup: tajweedMarkup!,
+              displayText: indoPak ? displayedText : null,
+              style: style,
+              textAlign: TextAlign.center,
+            )
+          : Text(
+              displayedText,
+              textAlign: TextAlign.center,
+              textDirection: TextDirection.rtl,
+              style: style,
+            ),
     );
   }
 }

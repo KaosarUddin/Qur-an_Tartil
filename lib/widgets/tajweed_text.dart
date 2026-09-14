@@ -6,12 +6,14 @@ class TajweedText extends StatelessWidget {
   final String markup;
   final String? displayText;
   final TextStyle? style;
+  final TextAlign textAlign;
 
   const TajweedText({
     super.key,
     required this.markup,
     this.displayText,
     this.style,
+    this.textAlign = TextAlign.right,
   });
 
   @override
@@ -43,7 +45,7 @@ class TajweedText extends StatelessWidget {
             )
             .toList(growable: false),
       ),
-      textAlign: TextAlign.right,
+      textAlign: textAlign,
       textDirection: TextDirection.rtl,
     );
   }

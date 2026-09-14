@@ -6,7 +6,7 @@ import 'package:http/testing.dart';
 import 'package:quran_tutor_mvp/services/quran_script_service.dart';
 
 void main() {
-  test('loads Tajweed text and prepends its annotated basmala', () async {
+  test('loads Tajweed ayahs without merging in the basmala', () async {
     final client = MockClient((request) async {
       if (request.url.queryParameters['verse_key'] == '1:1') {
         return _jsonResponse([
@@ -37,12 +37,12 @@ void main() {
       expectedAyahCount: 1,
     );
 
-    expect(result[1], startsWith('بِسْمِ'));
+    expect(result[1], isNot(startsWith('بِسْمِ')));
     expect(result[1], contains('class=madda_necessary'));
     service.dispose();
   });
 
-  test('loads Indo-Pak text and prepends the Indo-Pak basmala', () async {
+  test('loads Indo-Pak ayahs without merging in the basmala', () async {
     final client = MockClient((request) async {
       if (request.url.queryParameters['verse_key'] == '1:1') {
         return _jsonResponse([
@@ -65,7 +65,38 @@ void main() {
       expectedAyahCount: 1,
     );
 
-    expect(result[1], 'بِسۡمِ اللهِ الرَّحۡمٰنِ الرَّحِيۡمِ الٓمّٓۚ');
+    expect(result[1], 'الٓمّٓۚ');
+    service.dispose();
+  });
+
+  test('loads each script-specific basmala separately', () async {
+    final client = MockClient((request) async {
+      expect(request.url.queryParameters['verse_key'], '1:1');
+      if (request.url.path.endsWith('/uthmani_tajweed')) {
+        return _jsonResponse([
+          {
+            'verse_key': '1:1',
+            'text_uthmani_tajweed':
+                'بِسْمِ <tajweed class=ham_wasl>ٱ</tajweed>للَّهِ '
+                    '<span class=end>١</span>',
+          },
+        ]);
+      }
+      return _jsonResponse([
+        {
+          'verse_key': '1:1',
+          'text_indopak': 'بِسۡمِ اللهِ الرَّحۡمٰنِ الرَّحِيۡمِ',
+        },
+      ]);
+    });
+    final service = QuranScriptService(client: client);
+
+    final tajweed = await service.loadBasmala(QuranOnlineScript.tajweed);
+    final indoPak = await service.loadBasmala(QuranOnlineScript.indoPak);
+
+    expect(tajweed, isNot(contains('class=end')));
+    expect(tajweed, isNot(contains('<span')));
+    expect(indoPak, 'بِسۡمِ اللهِ الرَّحۡمٰنِ الرَّحِيۡمِ');
     service.dispose();
   });
 

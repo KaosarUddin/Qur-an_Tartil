@@ -83,15 +83,11 @@ class QuranScriptService {
       }
     }
 
-    if (surah != 1 && surah != 9) {
-      final basmala = await _basmalaCache.putIfAbsent(
-        script,
-        () => _loadBasmala(script),
-      );
-      textByAyah[1] = '$basmala ${textByAyah[1]}';
-    }
     return UnmodifiableMapView(textByAyah);
   }
+
+  Future<String> loadBasmala(QuranOnlineScript script) =>
+      _basmalaCache.putIfAbsent(script, () => _loadBasmala(script));
 
   Future<String> _loadBasmala(QuranOnlineScript script) async {
     final verses = await _request(script, {'verse_key': '1:1'});

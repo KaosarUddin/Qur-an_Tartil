@@ -12,16 +12,11 @@ void main() {
     );
   });
 
-  test('queues the basmala before a first ayah that includes it', () {
+  test('keeps a separate basmala out of per-ayah practice audio', () {
     final tracks = QuranAudioService.referenceQueue(surah: 2, ayah: 1);
 
-    expect(
-      tracks.map((track) => track.toString()),
-      [
-        'https://everyayah.com/data/Alafasy_128kbps/002000.mp3',
-        'https://everyayah.com/data/Alafasy_128kbps/002001.mp3',
-      ],
-    );
+    expect(tracks, hasLength(1));
+    expect(tracks.single.toString(), endsWith('/002001.mp3'));
   });
 
   test('does not queue a basmala for At-Tawbah', () {

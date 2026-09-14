@@ -15,6 +15,7 @@ class Surah {
   final String nameEnglish;
   final String nameArabic;
   final String revelation;
+  final String? basmala;
   final List<Ayah> ayahs;
 
   const Surah({
@@ -22,6 +23,7 @@ class Surah {
     required this.nameEnglish,
     required this.nameArabic,
     required this.revelation,
+    this.basmala,
     required this.ayahs,
   });
 }

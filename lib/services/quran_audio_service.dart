@@ -11,12 +11,7 @@ class QuranAudioService {
       throw RangeError('Invalid Quran reference $surah:$ayah');
     }
 
-    final tracks = <Uri>[];
-    if (ayah == 1 && surah != 1 && surah != 9) {
-      tracks.add(_audioUri(surah, 0));
-    }
-    tracks.add(_audioUri(surah, ayah));
-    return List<Uri>.unmodifiable(tracks);
+    return List<Uri>.unmodifiable([_audioUri(surah, ayah)]);
   }
 
   static Uri _audioUri(int surah, int ayah) {

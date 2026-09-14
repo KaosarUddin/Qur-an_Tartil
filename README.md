@@ -8,6 +8,7 @@ A clean Flutter + FastAPI starter for a Quran learning app inspired by the *cate
 - All 114 surahs with 6,236 Arabic ayahs available offline
 - Uthmani and Indo-Pak script ayah reader with surah metadata
 - Optional colour-coded Tajweed reading mode with a rule legend
+- Practice screen preserves the selected Uthmani, Tajweed, or Indo-Pak style
 - Automatic reference recitation after each analysis
 - Side-by-side playback of the reference recitation and learner recording
 - Microphone recording using `record`
@@ -59,7 +60,7 @@ The app uses `http://10.0.2.2:8000` on an Android emulator and `http://127.0.0.1
 
 The bundled Uthmani Quran text and metadata come from the [Tanzil Project](https://tanzil.net/). The text contains all 114 surahs and 6,236 ayahs and is distributed verbatim under the Creative Commons Attribution 3.0 license. Tanzil's required copyright and license notice is retained in `assets/quran/quran-uthmani.txt`.
 
-The basmala is included at the start of every surah except At-Tawbah (Surah 9), following the source text and standard Mushaf convention. The basmala within An-Naml 27:30 is also preserved. Surahs 95 and 97 retain Tanzil's documented Uthmani idgham spelling.
+The verbatim source asset includes the basmala at the start of each surah except At-Tawbah (Surah 9). At runtime, the reader separates it into a dedicated surah-opening header instead of treating it as part of Ayah 1. Al-Fatihah is the exception: its basmala remains numbered Ayah 1 under the bundled Hafs verse numbering. The basmala within An-Naml 27:30 is also preserved, and Surahs 95 and 97 retain Tanzil's documented Uthmani idgham spelling.
 
 For the optional Tajweed-colour and Indo-Pak modes, the reader requests the selected surah from the [Quran Foundation Content API](https://api-docs.quran.com/docs/content_apis_versioned/4.0.0/quran-verses-by-script/). Indo-Pak mode also loads the official QuranWBW IndoPak Nastaleeq typeface from Quran Foundation's font CDN at runtime. Tajweed rules are transferred onto the matching Indo-Pak letters through per-ayah sequence alignment; unmatched letters remain uncoloured, and an ayah remains plain if the scripts do not meet the safety threshold. Responses and the font are held only in memory for the current app session, without modifying the source content, and fall back to the bundled Tanzil Uthmani text and system font if the network is unavailable. The app displays the required Quran Foundation attribution alongside online script modes. Tajweed colour schemes can vary between Mushaf editions; use the rule labels, rather than colour alone, as the guide.
 
@@ -71,7 +72,7 @@ dart run tool/fetch_quran.dart
 
 ## Reference recitation audio
 
-Ayah reference audio is streamed from the [Verse By Verse Quran Project](https://everyayah.com/) and recited by Mishary Rashid Alafasy. An internet connection is required. For the first ayah of surahs other than Al-Fatihah and At-Tawbah, the player queues that surah's basmala track before its first numbered ayah so playback matches the displayed Tanzil text.
+Ayah reference audio is streamed from the [Verse By Verse Quran Project](https://everyayah.com/) and recited by Mishary Rashid Alafasy. An internet connection is required. Per-ayah practice plays only the selected numbered ayah; a surah's separately displayed basmala is not merged into Ayah 1 playback.
 
 The current percentage and word feedback are explicitly labeled as demo results. They are deterministic prototype output, not measured pronunciation or certified Tajweed accuracy. Review the audio provider's terms and obtain any additional permission needed before commercial distribution.
 

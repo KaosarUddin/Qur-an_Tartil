@@ -7,6 +7,8 @@ import '../models/quran_models.dart';
 class QuranRepository {
   static const _quranAsset = 'assets/quran/quran-uthmani.txt';
   static const _metadataAsset = 'assets/quran/quran-data.xml';
+  static const _basmala = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ';
+  static const _basmalaWithIdgham = 'بِّسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ';
 
   static Future<List<Surah>>? _cachedQuran;
 
@@ -41,18 +43,42 @@ class QuranRepository {
     }
 
     return List<Surah>.unmodifiable(metadata.map((entry) {
-      final ayahs = ayahsBySurah[entry.number] ?? const <Ayah>[];
-      if (ayahs.length != entry.ayahCount) {
+      final sourceAyahs = ayahsBySurah[entry.number] ?? const <Ayah>[];
+      if (sourceAyahs.length != entry.ayahCount) {
         throw FormatException(
           'Surah ${entry.number} expected ${entry.ayahCount} ayahs, '
-          'but found ${ayahs.length}.',
+          'but found ${sourceAyahs.length}.',
         );
+      }
+      String? basmala;
+      var ayahs = sourceAyahs;
+      if (entry.number != 1 && entry.number != 9) {
+        final first = sourceAyahs.first;
+        basmala = first.arabic.startsWith(_basmalaWithIdgham)
+            ? _basmalaWithIdgham
+            : first.arabic.startsWith(_basmala)
+                ? _basmala
+                : null;
+        if (basmala == null) {
+          throw FormatException(
+            'Surah ${entry.number} does not start with the expected basmala.',
+          );
+        }
+        ayahs = [
+          Ayah(
+            number: first.number,
+            arabic: first.arabic.substring(basmala.length).trimLeft(),
+            translation: first.translation,
+          ),
+          ...sourceAyahs.skip(1),
+        ];
       }
       return Surah(
         number: entry.number,
         nameEnglish: entry.transliteratedName,
         nameArabic: entry.arabicName,
         revelation: '${entry.revelationType} • ${ayahs.length} Ayahs',
+        basmala: basmala,
         ayahs: List<Ayah>.unmodifiable(ayahs),
       );
     }));
