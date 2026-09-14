@@ -5,7 +5,12 @@ void main() {
   testWidgets('shows the Quran Tutor home screen', (tester) async {
     await tester.pumpWidget(const QuranTutorApp());
 
-    expect(find.text('Assalamu Alaikum'), findsOneWidget);
+    expect(
+      find.text(
+        'السَّلَامُ عَلَيْكُمْ وَرَحْمَةُ اللَّهِ وَبَرَكَاتُهُ',
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Read Quran'), findsOneWidget);
   });
 }

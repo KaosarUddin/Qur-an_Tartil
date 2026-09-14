@@ -20,8 +20,11 @@ class HomeScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Assalamu Alaikum',
-                        style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'السَّلَامُ عَلَيْكُمْ وَرَحْمَةُ اللَّهِ وَبَرَكَاتُهُ',
+                      textDirection: TextDirection.rtl,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 4),
                     Text('Continue your Quran journey',
                         style: Theme.of(context)
