@@ -60,7 +60,7 @@ The app uses `http://10.0.2.2:8000` on an Android emulator and `http://127.0.0.1
 
 The browser build is deployed from `main` with GitHub Pages at [kaosaruddin.github.io/Qur-an_Tartil](https://kaosaruddin.github.io/Qur-an_Tartil/). On the website, microphone recording and replay work in supported browsers, while analysis uses the clearly labelled local demo result until a public HTTPS analysis backend is configured.
 
-Pushing a version tag such as `v0.1.0` builds a complete Windows ZIP and publishes it under [GitHub Releases](https://github.com/KaosarUddin/Qur-an_Tartil/releases). Extract the entire ZIP before opening `quran_tutor_mvp.exe`; the executable needs the bundled `data` directory and DLL files beside it.
+Pushing a version tag such as `v0.1.1` builds a complete Windows ZIP and publishes it under [GitHub Releases](https://github.com/KaosarUddin/Qur-an_Tartil/releases). Extract the entire ZIP before opening `quran_tarteel.exe`; the executable needs the bundled `data` directory and DLL files beside it.
 
 ## Quran text data
 

@@ -22,7 +22,7 @@ class _QuranTutorAppState extends State<QuranTutorApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Quran Tutor',
+      title: 'Quran Tarteel',
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: mode,

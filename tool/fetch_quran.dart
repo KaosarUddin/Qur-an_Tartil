@@ -45,7 +45,7 @@ Future<List<int>> _download(Uri uri) async {
   try {
     final request = await client.getUrl(uri);
     request.headers
-        .set(HttpHeaders.userAgentHeader, 'Quran-Tartil data fetcher');
+        .set(HttpHeaders.userAgentHeader, 'Quran-Tarteel data fetcher');
     final response = await request.close();
     if (response.statusCode != HttpStatus.ok) {
       throw HttpException(

@@ -7,7 +7,7 @@ from fastapi import FastAPI, File, Form, UploadFile
 from pydantic import BaseModel
 
 app = FastAPI(
-    title="Quran Tutor AI API",
+    title="Quran Tarteel AI API",
     version="0.1.0",
     description="MVP API. Word-level scores are simulated until the Quranic ASR/pronunciation model is integrated.",
 )

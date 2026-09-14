@@ -1,4 +1,4 @@
-# Quran Tutor Product Plan
+# Quran Tarteel Product Plan
 
 ## MVP 0.1 (included)
 - Original Flutter UI
