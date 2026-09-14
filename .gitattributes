@@ -1,0 +1,3 @@
+# Preserve the verbatim Tanzil data files with their distributed LF endings.
+assets/quran/quran-uthmani.txt text eol=lf
+assets/quran/quran-data.xml text eol=lf

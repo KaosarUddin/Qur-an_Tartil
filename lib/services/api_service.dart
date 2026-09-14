@@ -72,6 +72,10 @@ class ApiService {
     final avg = words.isEmpty
         ? 0.0
         : words.map((e) => e.score).reduce((a, b) => a + b) / words.length;
-    return RecitationResult(overallScore: avg, words: words);
+    return RecitationResult(
+      overallScore: avg,
+      words: words,
+      engine: 'local-demo',
+    );
   }
 }

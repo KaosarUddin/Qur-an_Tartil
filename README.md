@@ -7,7 +7,8 @@ A clean Flutter + FastAPI starter for a Quran learning app inspired by the *cate
 - Home dashboard
 - All 114 surahs with 6,236 Arabic ayahs available offline
 - Uthmani-script ayah reader with surah metadata
-- Audio-listen UI placeholder
+- Automatic reference recitation after each analysis
+- Side-by-side playback of the reference recitation and learner recording
 - Microphone recording using `record`
 - AI Check flow connected to a FastAPI endpoint
 - Word-level feedback UI: correct / improve / incorrect
@@ -64,6 +65,12 @@ To fetch and validate a fresh verbatim copy from Tanzil:
 ```bash
 dart run tool/fetch_quran.dart
 ```
+
+## Reference recitation audio
+
+Ayah reference audio is streamed from the [Verse By Verse Quran Project](https://everyayah.com/) and recited by Mishary Rashid Alafasy. An internet connection is required. For the first ayah of surahs other than Al-Fatihah and At-Tawbah, the player queues that surah's basmala track before its first numbered ayah so playback matches the displayed Tanzil text.
+
+The current percentage and word feedback are explicitly labeled as demo results. They are deterministic prototype output, not measured pronunciation or certified Tajweed accuracy. Review the audio provider's terms and obtain any additional permission needed before commercial distribution.
 
 ## Run the backend
 

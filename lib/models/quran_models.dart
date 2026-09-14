@@ -59,8 +59,15 @@ class WordFeedback {
 class RecitationResult {
   final double overallScore;
   final List<WordFeedback> words;
+  final String engine;
 
-  const RecitationResult({required this.overallScore, required this.words});
+  const RecitationResult({
+    required this.overallScore,
+    required this.words,
+    required this.engine,
+  });
+
+  bool get isDemo => engine == 'local-demo' || engine.startsWith('mock');
 
   factory RecitationResult.fromJson(Map<String, dynamic> json) =>
       RecitationResult(
@@ -69,5 +76,6 @@ class RecitationResult {
             .map((e) =>
                 WordFeedback.fromJson(Map<String, dynamic>.from(e as Map)))
             .toList(),
+        engine: json['engine'] as String? ?? 'unknown',
       );
 }

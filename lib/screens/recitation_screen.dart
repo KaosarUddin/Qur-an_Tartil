@@ -62,7 +62,10 @@ class _RecitationScreenState extends State<RecitationScreen> {
     setState(() => _analyzing = false);
     await Navigator.of(context).push(MaterialPageRoute(
         builder: (_) => ResultScreen(
-            surah: widget.surah, ayah: widget.ayah, result: result)));
+            surah: widget.surah,
+            ayah: widget.ayah,
+            result: result,
+            userRecordingPath: _audioPath)));
   }
 
   @override
