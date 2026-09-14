@@ -1,13 +1,10 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/quran_models.dart';
+import 'api_platform.dart';
 
 class ApiService {
-  // Android emulators expose the host as 10.0.2.2. Desktop and iOS use
-  // localhost, which also makes the generated Windows runner work as-is.
-  static String get baseUrl =>
-      Platform.isAndroid ? 'http://10.0.2.2:8000' : 'http://127.0.0.1:8000';
+  static String? get baseUrl => recitationApiBaseUrl;
 
   Future<RecitationResult> analyzeRecitation({
     required int surah,
@@ -15,19 +12,19 @@ class ApiService {
     required String expectedText,
     String? audioPath,
   }) async {
+    final endpoint = baseUrl;
+    if (endpoint == null) return _localDemo(expectedText);
+
     try {
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse('$baseUrl/v1/recitation/analyze'),
+        Uri.parse('$endpoint/v1/recitation/analyze'),
       )
         ..fields['surah'] = '$surah'
         ..fields['ayah'] = '$ayah'
         ..fields['expected_text'] = expectedText;
 
-      if (audioPath != null && await File(audioPath).exists()) {
-        request.files
-            .add(await http.MultipartFile.fromPath('audio', audioPath));
-      }
+      await attachRecordedAudio(request, audioPath);
 
       final streamed =
           await request.send().timeout(const Duration(seconds: 10));

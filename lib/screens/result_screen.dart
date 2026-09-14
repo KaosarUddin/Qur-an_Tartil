@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../models/quran_models.dart';
 import '../services/quran_audio_service.dart';
+import '../services/recording_source.dart';
 
 class ResultScreen extends StatefulWidget {
   final Surah surah;
@@ -132,7 +133,7 @@ class _ResultScreenState extends State<ResultScreen> {
     _referenceQueue = const [];
     await _referencePlayer.stop();
     try {
-      await _recordingPlayer.play(DeviceFileSource(recordingPath));
+      await _recordingPlayer.play(recordedAudioSource(recordingPath));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

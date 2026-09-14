@@ -3,6 +3,7 @@
 *.iml
 .packages
 build/
+dist/
 .flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/

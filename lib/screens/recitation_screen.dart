@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:record/record.dart';
-import 'package:path_provider/path_provider.dart';
 import '../models/quran_models.dart';
 import '../services/api_service.dart';
 import '../services/quran_font_service.dart';
+import '../services/recording_path.dart';
 import '../widgets/tajweed_text.dart';
 import 'result_screen.dart';
 
@@ -50,9 +50,7 @@ class _RecitationScreenState extends State<RecitationScreen> {
       }
       return;
     }
-    final dir = await getTemporaryDirectory();
-    final path =
-        '${dir.path}/recitation_${DateTime.now().millisecondsSinceEpoch}.m4a';
+    final path = await createRecordingPath();
     await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc),
         path: path);
     if (mounted) {
