@@ -1,4 +1,4 @@
-# Quran Tutor MVP
+# Quran Tartil
 
 A clean Flutter + FastAPI starter for a Quran learning app inspired by the *category* of AI Quran tutors, built with original code and UI.
 
