@@ -63,20 +63,29 @@ class _RecitationScreenState extends State<RecitationScreen> {
 
   Future<void> _analyze() async {
     setState(() => _analyzing = true);
-    final result = await ApiService().analyzeRecitation(
-      surah: widget.surah.number,
-      ayah: widget.ayah.number,
-      expectedText: widget.ayah.arabic,
-      audioPath: _audioPath,
-    );
-    if (!mounted) return;
-    setState(() => _analyzing = false);
-    await Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => ResultScreen(
-            surah: widget.surah,
-            ayah: widget.ayah,
-            result: result,
-            userRecordingPath: _audioPath)));
+    try {
+      final result = await ApiService().analyzeRecitation(
+        surah: widget.surah.number,
+        ayah: widget.ayah.number,
+        expectedText: widget.ayah.arabic,
+        tajweedMarkup: widget.tajweedMarkup,
+        audioPath: _audioPath,
+      );
+      if (!mounted) return;
+      setState(() => _analyzing = false);
+      await Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => ResultScreen(
+              surah: widget.surah,
+              ayah: widget.ayah,
+              result: result,
+              userRecordingPath: _audioPath)));
+    } on RecitationAnalysisException catch (error) {
+      if (!mounted) return;
+      setState(() => _analyzing = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    }
   }
 
   @override
@@ -174,7 +183,9 @@ class _RecitationScreenState extends State<RecitationScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-                'MVP: feedback is currently simulated. Replace backend scorer with validated Quranic ASR/pronunciation models before production.',
+                ApiService.baseUrl == null
+                    ? 'Demo mode: configure RECITATION_API_URL to analyze the recording.'
+                    : 'Experimental Quran ASR: word and letter matching can make mistakes. Tajweed rules are practice guidance until audio validation is added.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall),
           ],

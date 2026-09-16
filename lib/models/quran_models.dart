@@ -30,13 +30,21 @@ class Surah {
 
 enum WordStatus { correct, improve, incorrect }
 
-enum FeedbackIssueType { missingLetter, pronunciation, tajweed, other }
+enum FeedbackIssueType {
+  missingWord,
+  missingLetter,
+  extraLetter,
+  pronunciation,
+  tajweed,
+  other,
+}
 
 class FeedbackIssue {
   final FeedbackIssueType type;
   final String title;
   final String detail;
   final String? expected;
+  final String? observed;
   final String? rule;
   final String suggestion;
 
@@ -45,13 +53,16 @@ class FeedbackIssue {
     required this.title,
     required this.detail,
     this.expected,
+    this.observed,
     this.rule,
     required this.suggestion,
   });
 
   factory FeedbackIssue.fromJson(Map<String, dynamic> json) => FeedbackIssue(
         type: switch (json['type'] as String?) {
+          'missing_word' => FeedbackIssueType.missingWord,
           'missing_letter' => FeedbackIssueType.missingLetter,
+          'extra_letter' => FeedbackIssueType.extraLetter,
           'pronunciation' => FeedbackIssueType.pronunciation,
           'tajweed' => FeedbackIssueType.tajweed,
           _ => FeedbackIssueType.other,
@@ -59,6 +70,7 @@ class FeedbackIssue {
         title: json['title'] as String? ?? 'Needs attention',
         detail: json['detail'] as String? ?? '',
         expected: json['expected'] as String?,
+        observed: json['observed'] as String?,
         rule: json['rule'] as String?,
         suggestion: json['suggestion'] as String? ?? '',
       );
@@ -69,14 +81,18 @@ class WordFeedback {
   final WordStatus status;
   final double score;
   final String tip;
+  final String? observed;
   final List<FeedbackIssue> issues;
+  final List<String> rules;
 
   const WordFeedback({
     required this.word,
     required this.status,
     required this.score,
     required this.tip,
+    this.observed,
     this.issues = const [],
+    this.rules = const [],
   });
 
   factory WordFeedback.fromJson(Map<String, dynamic> json) {
@@ -90,9 +106,13 @@ class WordFeedback {
       },
       score: (json['score'] as num? ?? 0).toDouble(),
       tip: json['tip'] as String? ?? '',
+      observed: json['observed'] as String?,
       issues: ((json['issues'] as List?) ?? const [])
           .map((e) =>
               FeedbackIssue.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(growable: false),
+      rules: ((json['rules'] as List?) ?? const [])
+          .map((e) => e.toString())
           .toList(growable: false),
     );
   }
@@ -102,14 +122,21 @@ class RecitationResult {
   final double overallScore;
   final List<WordFeedback> words;
   final String engine;
+  final String? transcript;
+  final List<String> extraWords;
+  final String? assessmentNotice;
 
   const RecitationResult({
     required this.overallScore,
     required this.words,
     required this.engine,
+    this.transcript,
+    this.extraWords = const [],
+    this.assessmentNotice,
   });
 
   bool get isDemo => engine == 'local-demo' || engine.startsWith('mock');
+  bool get isExperimental => engine.contains('experimental');
 
   factory RecitationResult.fromJson(Map<String, dynamic> json) =>
       RecitationResult(
@@ -119,5 +146,10 @@ class RecitationResult {
                 WordFeedback.fromJson(Map<String, dynamic>.from(e as Map)))
             .toList(),
         engine: json['engine'] as String? ?? 'unknown',
+        transcript: json['transcript'] as String?,
+        extraWords: ((json['extra_words'] as List?) ?? const [])
+            .map((e) => e.toString())
+            .toList(growable: false),
+        assessmentNotice: json['assessment_notice'] as String?,
       );
 }

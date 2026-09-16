@@ -168,14 +168,18 @@ class _ResultScreenState extends State<ResultScreen> {
       };
 
   String _issueLabel(FeedbackIssueType type) => switch (type) {
+        FeedbackIssueType.missingWord => 'Missing word',
         FeedbackIssueType.missingLetter => 'Missing letter',
+        FeedbackIssueType.extraLetter => 'Additional sound',
         FeedbackIssueType.pronunciation => 'Pronunciation',
         FeedbackIssueType.tajweed => 'Tajweed',
         FeedbackIssueType.other => 'Other',
       };
 
   IconData _issueIcon(FeedbackIssueType type) => switch (type) {
+        FeedbackIssueType.missingWord => Icons.playlist_remove_rounded,
         FeedbackIssueType.missingLetter => Icons.text_fields_rounded,
+        FeedbackIssueType.extraLetter => Icons.add_comment_outlined,
         FeedbackIssueType.pronunciation => Icons.record_voice_over_rounded,
         FeedbackIssueType.tajweed => Icons.graphic_eq_rounded,
         FeedbackIssueType.other => Icons.info_outline_rounded,
@@ -188,6 +192,9 @@ class _ResultScreenState extends State<ResultScreen> {
     final recordingPlaying = _recordingState == PlayerState.playing;
     final issues = widget.result.words
         .expand((word) => word.issues)
+        .toList(growable: false);
+    final wordsWithRules = widget.result.words
+        .where((word) => word.rules.isNotEmpty)
         .toList(growable: false);
     final issueCounts = <FeedbackIssueType, int>{};
     for (final issue in issues) {
@@ -224,7 +231,14 @@ class _ResultScreenState extends State<ResultScreen> {
                             .headlineMedium
                             ?.copyWith(fontWeight: FontWeight.w900),
                       ),
-                      Text(widget.result.isDemo ? 'demo accuracy' : 'accuracy'),
+                      Text(
+                        widget.result.isDemo
+                            ? 'demo accuracy'
+                            : widget.result.isExperimental
+                                ? 'experimental match'
+                                : 'accuracy',
+                        textAlign: TextAlign.center,
+                      ),
                     ],
                   ),
                 ],
@@ -235,12 +249,24 @@ class _ResultScreenState extends State<ResultScreen> {
           if (widget.result.isDemo)
             Card(
               color: Theme.of(context).colorScheme.tertiaryContainer,
-              child: const Padding(
-                padding: EdgeInsets.all(14),
+              child: Padding(
+                padding: const EdgeInsets.all(14),
                 child: Text(
-                  'Demo examples only — the current engine does not yet hear '
-                  'real letter or Tajweed mistakes. Do not use this as a '
-                  'validated assessment.',
+                  widget.result.assessmentNotice ??
+                      'Demo examples only — no recording was analyzed.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          if (widget.result.isExperimental)
+            Card(
+              color: Theme.of(context).colorScheme.secondaryContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Text(
+                  widget.result.assessmentNotice ??
+                      'Experimental speech recognition result. Verify it with '
+                          'a qualified teacher.',
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -329,6 +355,100 @@ class _ResultScreenState extends State<ResultScreen> {
                 )
                 .toList(),
           ),
+          if (widget.result.transcript?.isNotEmpty ?? false) ...[
+            const SizedBox(height: 14),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Recognizer heard',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      widget.result.transcript!,
+                      textDirection: TextDirection.rtl,
+                      style: const TextStyle(fontSize: 20),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          if (widget.result.extraWords.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Card(
+              color: Theme.of(context).colorScheme.errorContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Text(
+                  'Possible additional words: '
+                  '${widget.result.extraWords.join('، ')}',
+                  textDirection: TextDirection.rtl,
+                ),
+              ),
+            ),
+          ],
+          if (wordsWithRules.isNotEmpty) ...[
+            const SizedBox(height: 22),
+            Text(
+              'Expected Tajweed rules',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'These rules come from the annotated Hafs text. They show what '
+              'to practise; they are not yet measurements of your audio.',
+            ),
+            const SizedBox(height: 10),
+            ...wordsWithRules.map(
+              (word) => Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 110,
+                        child: Text(
+                          word.word,
+                          textDirection: TextDirection.rtl,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: word.rules
+                              .map(
+                                (rule) => Chip(
+                                  visualDensity: VisualDensity.compact,
+                                  avatar: const Icon(
+                                    Icons.graphic_eq_rounded,
+                                    size: 17,
+                                  ),
+                                  label: Text(rule),
+                                ),
+                              )
+                              .toList(growable: false),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 22),
           if (issues.isNotEmpty) ...[
             Text(
@@ -398,6 +518,15 @@ class _ResultScreenState extends State<ResultScreen> {
                         ),
                         const SizedBox(height: 10),
                         Text(word.tip),
+                        if (word.observed != null &&
+                            word.observed != word.word) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            'Recognized as: ${word.observed}',
+                            textDirection: TextDirection.rtl,
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ],
                         ...word.issues.map(
                           (issue) => Padding(
                             padding: const EdgeInsets.only(top: 14),
@@ -436,10 +565,17 @@ class _ResultScreenState extends State<ResultScreen> {
                                     ),
                                     const SizedBox(height: 6),
                                     Text(issue.detail),
-                                    if (issue.expected != null) ...[
+                                    if (issue.expected != null ||
+                                        issue.observed != null) ...[
                                       const SizedBox(height: 6),
                                       Text(
-                                        'Focus letter: ${issue.expected}',
+                                        issue.expected != null &&
+                                                issue.observed != null
+                                            ? 'Expected: ${issue.expected}  •  '
+                                                'Heard: ${issue.observed}'
+                                            : issue.expected != null
+                                                ? 'Expected: ${issue.expected}'
+                                                : 'Heard: ${issue.observed}',
                                         style: const TextStyle(
                                           fontWeight: FontWeight.w700,
                                         ),

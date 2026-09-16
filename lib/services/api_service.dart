@@ -3,6 +3,15 @@ import 'package:http/http.dart' as http;
 import '../models/quran_models.dart';
 import 'api_platform.dart';
 
+class RecitationAnalysisException implements Exception {
+  final String message;
+
+  const RecitationAnalysisException(this.message);
+
+  @override
+  String toString() => message;
+}
+
 class ApiService {
   static String? get baseUrl => recitationApiBaseUrl;
 
@@ -10,6 +19,7 @@ class ApiService {
     required int surah,
     required int ayah,
     required String expectedText,
+    String? tajweedMarkup,
     String? audioPath,
   }) async {
     final endpoint = baseUrl;
@@ -23,20 +33,32 @@ class ApiService {
         ..fields['surah'] = '$surah'
         ..fields['ayah'] = '$ayah'
         ..fields['expected_text'] = expectedText;
+      if (tajweedMarkup != null && tajweedMarkup.isNotEmpty) {
+        request.fields['tajweed_markup'] = tajweedMarkup;
+      }
 
       await attachRecordedAudio(request, audioPath);
 
-      final streamed =
-          await request.send().timeout(const Duration(seconds: 10));
+      final streamed = await request.send().timeout(const Duration(minutes: 3));
       final body = await streamed.stream.bytesToString();
       if (streamed.statusCode >= 200 && streamed.statusCode < 300) {
         return RecitationResult.fromJson(
             jsonDecode(body) as Map<String, dynamic>);
       }
-    } catch (_) {
-      // Fall through to the local demo result so the MVP remains testable offline.
+      final payload = jsonDecode(body);
+      final detail = payload is Map ? payload['detail'] : null;
+      throw RecitationAnalysisException(
+        detail?.toString() ??
+            'Analysis failed with HTTP ${streamed.statusCode}.',
+      );
+    } on RecitationAnalysisException {
+      rethrow;
+    } catch (error) {
+      throw RecitationAnalysisException(
+        'Could not reach the recitation server. Start the backend and try '
+        'again. ($error)',
+      );
     }
-    return _localDemo(expectedText);
   }
 
   RecitationResult _localDemo(String text) {
@@ -97,6 +119,8 @@ class ApiService {
       overallScore: avg,
       words: words,
       engine: 'local-demo',
+      assessmentNotice:
+          'Demo only: connect a Quran ASR backend for recording-based feedback.',
     );
   }
 }
