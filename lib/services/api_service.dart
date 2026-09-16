@@ -41,7 +41,7 @@ class ApiService {
 
   RecitationResult _localDemo(String text) {
     final tokens =
-        text.split(RegExp(r'\\s+')).where((e) => e.isNotEmpty).toList();
+        text.split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
     final words = <WordFeedback>[];
     for (var i = 0; i < tokens.length; i++) {
       final status = i % 5 == 4
@@ -49,6 +49,29 @@ class ApiService {
           : i % 3 == 2
               ? WordStatus.improve
               : WordStatus.correct;
+      final issue = switch (status) {
+        WordStatus.correct => null,
+        WordStatus.improve when (i ~/ 3).isOdd => const FeedbackIssue(
+            type: FeedbackIssueType.tajweed,
+            title: 'Tajweed timing',
+            detail: 'The timing or nasal quality may need attention.',
+            rule: 'Madd / ghunnah',
+            suggestion:
+                'Compare the held sound with the reference and repeat slowly.',
+          ),
+        WordStatus.improve => const FeedbackIssue(
+            type: FeedbackIssueType.pronunciation,
+            title: 'Letter pronunciation',
+            detail: 'A letter articulation point may need more clarity.',
+            suggestion: 'Listen to the reference, then repeat the word slowly.',
+          ),
+        WordStatus.incorrect => const FeedbackIssue(
+            type: FeedbackIssueType.missingLetter,
+            title: 'Possible missing letter',
+            detail: 'One part of the word did not align strongly enough.',
+            suggestion: 'Recite slowly and make every written letter audible.',
+          ),
+      };
       words.add(WordFeedback(
         word: tokens[i],
         status: status,
@@ -64,6 +87,7 @@ class ApiService {
           WordStatus.incorrect =>
             'Retry this word; the pronunciation did not align closely enough.',
         },
+        issues: issue == null ? const [] : [issue],
       ));
     }
     final avg = words.isEmpty

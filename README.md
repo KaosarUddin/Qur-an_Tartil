@@ -13,7 +13,8 @@ A clean Flutter + FastAPI starter for a Quran learning app inspired by the *cate
 - Side-by-side playback of the reference recitation and learner recording
 - Microphone recording using `record`
 - AI Check flow connected to a FastAPI endpoint
-- Word-level feedback UI: correct / improve / incorrect
+- Word-level feedback UI: correct / improve / incorrect, with structured
+  missing-letter, pronunciation, and Tajweed details
 - Learning progress screen
 - Prayer times placeholder screen
 - Qibla placeholder screen
@@ -80,7 +81,7 @@ dart run tool/fetch_quran.dart
 
 Ayah reference audio is streamed from the [Verse By Verse Quran Project](https://everyayah.com/) and recited by Mishary Rashid Alafasy. An internet connection is required. Per-ayah practice plays only the selected numbered ayah; a surah's separately displayed basmala is not merged into Ayah 1 playback.
 
-The current percentage and word feedback are explicitly labeled as demo results. They are deterministic prototype output, not measured pronunciation or certified Tajweed accuracy. Review the audio provider's terms and obtain any additional permission needed before commercial distribution.
+The current percentage and detailed word feedback are explicitly labeled as demo results. Missing-letter, pronunciation, and Tajweed items are deterministic examples of the production response format; they are not inferred from the recording. They must be replaced by evidence from phoneme alignment and validated Tajweed models before production. Review the audio provider's terms and obtain any additional permission needed before commercial distribution.
 
 ## Run the backend
 

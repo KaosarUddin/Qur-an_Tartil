@@ -167,11 +167,32 @@ class _ResultScreenState extends State<ResultScreen> {
         WordStatus.incorrect => 'Retry',
       };
 
+  String _issueLabel(FeedbackIssueType type) => switch (type) {
+        FeedbackIssueType.missingLetter => 'Missing letter',
+        FeedbackIssueType.pronunciation => 'Pronunciation',
+        FeedbackIssueType.tajweed => 'Tajweed',
+        FeedbackIssueType.other => 'Other',
+      };
+
+  IconData _issueIcon(FeedbackIssueType type) => switch (type) {
+        FeedbackIssueType.missingLetter => Icons.text_fields_rounded,
+        FeedbackIssueType.pronunciation => Icons.record_voice_over_rounded,
+        FeedbackIssueType.tajweed => Icons.graphic_eq_rounded,
+        FeedbackIssueType.other => Icons.info_outline_rounded,
+      };
+
   @override
   Widget build(BuildContext context) {
     final percent = (widget.result.overallScore * 100).round();
     final referencePlaying = _referenceState == PlayerState.playing;
     final recordingPlaying = _recordingState == PlayerState.playing;
+    final issues = widget.result.words
+        .expand((word) => word.issues)
+        .toList(growable: false);
+    final issueCounts = <FeedbackIssueType, int>{};
+    for (final issue in issues) {
+      issueCounts.update(issue.type, (count) => count + 1, ifAbsent: () => 1);
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Recitation Feedback')),
@@ -217,7 +238,9 @@ class _ResultScreenState extends State<ResultScreen> {
               child: const Padding(
                 padding: EdgeInsets.all(14),
                 child: Text(
-                  'Prototype score only — this is not yet a validated Tajweed assessment.',
+                  'Demo examples only — the current engine does not yet hear '
+                  'real letter or Tajweed mistakes. Do not use this as a '
+                  'validated assessment.',
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -307,43 +330,133 @@ class _ResultScreenState extends State<ResultScreen> {
                 .toList(),
           ),
           const SizedBox(height: 22),
+          if (issues.isNotEmpty) ...[
+            Text(
+              'Details to practise',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: issueCounts.entries
+                  .map(
+                    (entry) => Chip(
+                      avatar: Icon(_issueIcon(entry.key), size: 18),
+                      label: Text('${_issueLabel(entry.key)} · ${entry.value}'),
+                    ),
+                  )
+                  .toList(growable: false),
+            ),
+            const SizedBox(height: 10),
+          ],
           ...widget.result.words
               .where((word) => word.status != WordStatus.correct)
               .map(
                 (word) => Card(
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: _statusColor(context, word.status)
-                          .withValues(alpha: .13),
-                      child: Icon(
-                        word.status == WordStatus.incorrect
-                            ? Icons.replay_rounded
-                            : Icons.tips_and_updates_outlined,
-                        color: _statusColor(context, word.status),
-                      ),
-                    ),
-                    title: Row(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          word.word,
-                          textDirection: TextDirection.rtl,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                          ),
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor:
+                                  _statusColor(context, word.status)
+                                      .withValues(alpha: .13),
+                              child: Icon(
+                                word.status == WordStatus.incorrect
+                                    ? Icons.replay_rounded
+                                    : Icons.tips_and_updates_outlined,
+                                color: _statusColor(context, word.status),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                word.word,
+                                textDirection: TextDirection.rtl,
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              '${_statusLabel(word.status)} '
+                              '${(word.score * 100).round()}%',
+                              style: TextStyle(
+                                color: _statusColor(context, word.status),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 10),
-                        Text(
-                          _statusLabel(word.status),
-                          style: TextStyle(
-                            color: _statusColor(context, word.status),
-                            fontWeight: FontWeight.w700,
+                        const SizedBox(height: 10),
+                        Text(word.tip),
+                        ...word.issues.map(
+                          (issue) => Padding(
+                            padding: const EdgeInsets.only(top: 14),
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest
+                                    .withValues(alpha: .55),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(_issueIcon(issue.type), size: 19),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            issue.title,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ),
+                                        if (issue.rule != null)
+                                          Chip(
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                            label: Text(issue.rule!),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(issue.detail),
+                                    if (issue.expected != null) ...[
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        'Focus letter: ${issue.expected}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                    if (issue.suggestion.isNotEmpty) ...[
+                                      const SizedBox(height: 6),
+                                      Text('Try: ${issue.suggestion}'),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    subtitle:
-                        Text('${(word.score * 100).round()}% • ${word.tip}'),
                   ),
                 ),
               ),

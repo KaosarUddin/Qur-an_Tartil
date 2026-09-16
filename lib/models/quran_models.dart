@@ -30,17 +30,53 @@ class Surah {
 
 enum WordStatus { correct, improve, incorrect }
 
+enum FeedbackIssueType { missingLetter, pronunciation, tajweed, other }
+
+class FeedbackIssue {
+  final FeedbackIssueType type;
+  final String title;
+  final String detail;
+  final String? expected;
+  final String? rule;
+  final String suggestion;
+
+  const FeedbackIssue({
+    required this.type,
+    required this.title,
+    required this.detail,
+    this.expected,
+    this.rule,
+    required this.suggestion,
+  });
+
+  factory FeedbackIssue.fromJson(Map<String, dynamic> json) => FeedbackIssue(
+        type: switch (json['type'] as String?) {
+          'missing_letter' => FeedbackIssueType.missingLetter,
+          'pronunciation' => FeedbackIssueType.pronunciation,
+          'tajweed' => FeedbackIssueType.tajweed,
+          _ => FeedbackIssueType.other,
+        },
+        title: json['title'] as String? ?? 'Needs attention',
+        detail: json['detail'] as String? ?? '',
+        expected: json['expected'] as String?,
+        rule: json['rule'] as String?,
+        suggestion: json['suggestion'] as String? ?? '',
+      );
+}
+
 class WordFeedback {
   final String word;
   final WordStatus status;
   final double score;
   final String tip;
+  final List<FeedbackIssue> issues;
 
   const WordFeedback({
     required this.word,
     required this.status,
     required this.score,
     required this.tip,
+    this.issues = const [],
   });
 
   factory WordFeedback.fromJson(Map<String, dynamic> json) {
@@ -54,6 +90,10 @@ class WordFeedback {
       },
       score: (json['score'] as num? ?? 0).toDouble(),
       tip: json['tip'] as String? ?? '',
+      issues: ((json['issues'] as List?) ?? const [])
+          .map((e) =>
+              FeedbackIssue.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(growable: false),
     );
   }
 }
