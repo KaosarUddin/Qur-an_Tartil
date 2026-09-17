@@ -96,6 +96,9 @@ class _RecitationScreenState extends State<RecitationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final analyzerConnected = ApiService.baseUrl != null;
+    final canAnalyze =
+        !_recording && !_analyzing && _audioPath != null && analyzerConnected;
     final ayahStyle = TextStyle(
       fontFamily: widget.useIndoPakFont ? QuranFontService.indoPakFamily : null,
       fontSize: widget.useIndoPakFont ? 38 : 36,
@@ -167,7 +170,7 @@ class _RecitationScreenState extends State<RecitationScreen> {
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: _recording || _analyzing ? null : _analyze,
+                onPressed: canAnalyze ? _analyze : null,
                 icon: _analyzing
                     ? const SizedBox(
                         width: 18,
@@ -176,15 +179,17 @@ class _RecitationScreenState extends State<RecitationScreen> {
                     : const Icon(Icons.auto_awesome_rounded),
                 label: Text(_analyzing
                     ? 'Analyzing…'
-                    : _audioPath == null
-                        ? 'Try AI Demo'
-                        : 'Check My Recitation'),
+                    : !analyzerConnected
+                        ? 'Real Analyzer Not Connected'
+                        : _audioPath == null
+                            ? 'Record Recitation First'
+                            : 'Check My Recitation'),
               ),
             ),
             const SizedBox(height: 8),
             Text(
                 ApiService.baseUrl == null
-                    ? 'Demo mode: configure RECITATION_API_URL to analyze the recording.'
+                    ? 'This website cannot generate a score until a public HTTPS Quran ASR server is configured. No demo score will be shown.'
                     : 'Experimental Quran ASR: word and letter matching can make mistakes. Tajweed rules are practice guidance until audio validation is added.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall),

@@ -21,7 +21,8 @@ A clean Flutter + FastAPI starter for a Quran learning app inspired by the *cate
 - Qibla placeholder screen
 - Light/dark theme support
 
-The first backend returns deterministic demo scores. This is intentional: it lets the entire mobile product flow work before we train/integrate Quranic ASR + forced alignment + pronunciation scoring.
+The app does not generate sample scores. A recording and a reachable Quran ASR
+backend are required before the feedback screen can open.
 
 ## Folder layout
 
@@ -60,7 +61,7 @@ The app uses `http://10.0.2.2:8000` on an Android emulator and `http://127.0.0.1
 
 ## Website and Windows download
 
-The browser build is deployed from `main` with GitHub Pages at [kaosaruddin.github.io/Qur-an_Tartil](https://kaosaruddin.github.io/Qur-an_Tartil/). On the website, microphone recording and replay work in supported browsers, while analysis uses the clearly labelled local demo result until a public HTTPS analysis backend is configured.
+The browser build is deployed from `main` with GitHub Pages at [kaosaruddin.github.io/Qur-an_Tartil](https://kaosaruddin.github.io/Qur-an_Tartil/). The website does not issue scores until a public HTTPS analysis backend is configured. The Windows build connects to the local backend at `http://127.0.0.1:8000`.
 
 Pushing a version tag such as `v0.1.1` builds a complete Windows ZIP and publishes it under [GitHub Releases](https://github.com/KaosarUddin/Qur-an_Tartil/releases). Extract the entire ZIP before opening `quran_tarteel.exe`; the executable needs the bundled `data` directory and DLL files beside it.
 
@@ -82,7 +83,7 @@ dart run tool/fetch_quran.dart
 
 Ayah reference audio is streamed from the [Verse By Verse Quran Project](https://everyayah.com/) and recited by Mishary Rashid Alafasy. An internet connection is required. Per-ayah practice plays only the selected numbered ayah; a surah's separately displayed basmala is not merged into Ayah 1 playback.
 
-Without a configured backend, the percentage and detailed word feedback are explicitly labeled as demo results. With the experimental backend, word and letter differences come from Quran-specific Arabic ASR alignment and can contain false positives. Tajweed labels identify expected rules in the annotated Hafs text; they do not yet prove that the learner performed those rules correctly. Phoneme-level scoring and qualified-teacher validation are required before production. Review all model, dataset, and audio-provider terms before commercial distribution.
+Without a recording and configured backend, the app displays no score. With the experimental backend, word and letter differences come from Quran-specific Arabic ASR alignment and can contain false positives. Tajweed labels identify expected rules in the annotated Hafs text; they do not yet prove that the learner performed those rules correctly. Phoneme-level scoring and qualified-teacher validation are required before production. Review all model, dataset, and audio-provider terms before commercial distribution.
 
 ## Run the backend
 

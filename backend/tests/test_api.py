@@ -2,13 +2,25 @@ from io import BytesIO
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import patch
 
-from fastapi import UploadFile
+from fastapi import HTTPException, UploadFile
 
 from app.main import analyze_recitation
 from app.recitation_analysis import ENGINE_NAME, quran_asr_engine
 
 
 class RecitationApiTests(IsolatedAsyncioTestCase):
+    async def test_rejects_requests_without_a_recording(self):
+        with self.assertRaises(HTTPException) as raised:
+            await analyze_recitation(
+                surah=1,
+                ayah=1,
+                expected_text="بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+                audio=None,
+            )
+
+        self.assertEqual(raised.exception.status_code, 422)
+        self.assertIn("recorded recitation", raised.exception.detail)
+
     async def test_recording_uses_real_alignment_response_shape(self):
         audio = UploadFile(filename="recitation.wav", file=BytesIO(b"audio"))
         markup = (
